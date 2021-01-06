@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.hokwang.dao.EmployeeMapper">
+
+	<!-- 로그인 단건조회 -->
+	<select id="getEmp" parameterType="employeeVO"
+		resultType="employeeVO">
+		SELECT * <!-- 사원번호 -->
+
+		FROM employee
+		WHERE emp_no = #{emp_no}
+		AND emp_pwd = #{emp_pwd}
+	</select>
+
+	<!-- 아이디 찾기 -->
+	<select id="findId" parameterType="employeeVO"
+		resultType="employeeVO">
+		SELECT emp_no
+		FROM employee
+		WHERE emp_name = #{emp_name}
+		AND
+		emp_tel = #{emp_tel}
+	</select>
+
+	<!-- 비밀번호 찾기 -->
+	<select id="findPw" parameterType="employeeVO"
+		resultType="employeeVO">
+		SELECT emp_pwd
+		FROM employee
+		WHERE emp_no = #{emp_no}
+		AND
+		emp_tel = #{emp_tel}
+	</select>
+
+	<select id="getEmpList" resultType="emp">
+		SELECT *
+		FROM employee
+		WHERE
+		emp_no = #{emp_no}
+	</select>
+
+
+	<!-- 전체조회 -->
+	<!-- <select id="getEmpList" resultType="emp"> SELECT rownum id, e.* FROM 
+		employees e <where> <if test="departmentId != null"> department_id = #{departmentId} 
+		</if> <if test="employeeId != null"> and employee_id = #{employeeId} </if> 
+		<if test="salary != null"> <![CDATA[ and salary < #{salary} ]]> </if> <if 
+		test="firstName != null"> and upper(first_name) like '%' || upper(#{firstName}) 
+		|| '%' </if> <if test="employeeIds != null"> and employee_id in <foreach 
+		collection="employeeIds" item="id" open="(" close=")" separator=","> #{id} 
+		</foreach> </if> </where> ORDER BY first_name </select> -->
+
+
+
+
+	<!-- 사원등록 -->
+	<insert id="insertEmp" parameterType="emp">
+		INSERT INTO EMPLOYEES (
+		employee_id,
+		first_name,
+		last_name,
+		email,
+		hire_date,
+		job_id
+		)
+		VALUES(
+		#{employeeId},
+		#{firstName},
+		#{lastName},
+		#{email},
+		#{hireDate},
+		#{jobId})
+	</insert>
+
+	<select id="getCountMsg" parameterType="employeeVO"
+		resultType="int">
+		select count(msg_no) from message where emp_resvno =
+		#{emp_no} and msg_yn='N'
+	</select>
+
+	<select id="showNotReadMsg" parameterType="employeeVO"
+		resultType="messageVO">
+		select m.msg_yn,m.msg_cont,to_char(m.msg_date,'YYYY-MM-DD')
+		as msg_date,e.emp_name,e.emp_profile from message m,employee e
+		where
+		e.emp_no = m.EMP_SENDNO and m.emp_resvno = #{emp_no} order by msg_yn
+	</select>
+
+	<select id="getTotalCountMsg" parameterType="employeeVO"
+		resultType="int">
+		select count(msg_no) from message where emp_resvno =
+		#{emp_no}
+	</select>
+
+	<select id="sendCountMsg" parameterType="employeeVO"
+		resultType="int">
+		select count(msg_no) from message where emp_sendno =
+		#{emp_no}
+	</select>
+
+	<select id="tempCountMsg" parameterType="employeeVO"
+		resultType="int">
+		select count(temp_no) from tempmessage where TEMP_SENDNO =
+		#{emp_no}
+	</select>
+
+
+
+	<update id="updateInf" parameterType="employeeVO">
+		update employee set
+		emp_tel=#{emp_tel}
+		,emp_pwd=#{emp_pwd}
+		,emp_addr=#{emp_addr}
+		where emp_no
+		=#{emp_no}
+	</update>
+
+	<select id="getTotalMsg" parameterType="employeeVO"
+		resultType="messageVO">
+		select
+		m.emp_sendno,e.emp_name,m.MSG_CONT,m.MSG_DATE,m.MSG_YN from employee
+		e,message m where e.EMP_NO=m.EMP_SENDNO and m.EMP_SENDNO in(
+		select
+		EMP_SENDNO from message where emp_resvno=#{emp_no})
+	</select>
+
+	<select id="noReadTotalMsg" parameterType="employeeVO"
+		resultType="messageVO">
+		select m.emp_sendno,e.emp_name,m.MSG_CONT,m.MSG_DATE from
+		employee
+		e,message m where e.EMP_NO=m.EMP_SENDNO and m.EMP_SENDNO in(
+		select EMP_SENDNO from message where emp_resvno=#{emp_no} and
+		m.msg_yn='N')
+	</select>
+
+	<select id="sendTotalMsg" parameterType="employeeVO"
+		resultType="messageVO">
+		select
+		e.emp_name,m.emp_sendno,m.MSG_CONT,m.MSG_DATE,m.MSG_YN from employee
+		e,message m where e.emp_no = m.EMP_resvno and e.emp_no in(select
+		emp_sendno from message where emp_resvno =#{emp_no});
+	</select>
+
+
+	<select id="selectEmpInf" parameterType="employeeVO"
+		resultType="employeeVO">
+		select emp_name,emp_no from employee where emp_no !=
+		#{emp_no}
+	</select>
+
+	<insert id="sendMsgInf" parameterType="messageVO">
+		<selectKey order="BEFORE" keyProperty="msg_no" resultType="string">
+			SELECT NVL(MAX(MSG_NO),0)+1 FROM MESSAGE
+		</selectKey>
+		insert into
+		message(msg_no,msg_cont,msg_date,msg_yn,emp_sendno,emp_resvno)
+		values(#{msg_no},#{msg_cont},SYSDATE,'N',#{emp_sendno},#{emp_resvno})
+	</insert>
+
+
+	<insert id="tempMsgInf" parameterType="tempmessageVO">
+		<selectKey order="BEFORE" keyProperty="temp_no" resultType="string">
+			SELECT NVL(MAX(temp_NO),0)+1 FROM TEMPMESSAGE
+		</selectKey>
+		insert into tempmessage(temp_no,temp_cont,temp_date,temp_sendno,temp_resvno)
+		values(#{temp_no},#{temp_cont},SYSDATE,#{temp_sendno},#{temp_resvno})
+	</insert>
+
+
+	<select id="checkTemp" parameterType="tempmessageVO" resultType="tempmessageVO">
+		<![CDATA[
+		select * from ( select * from TEMPMESSAGE where temp_sendno = #{temp_sendno} order by TEMP_no DESC) where ROWNUM <= 1
+		]]>
+	</select>
+
+
+
+
+
+
+</mapper>
